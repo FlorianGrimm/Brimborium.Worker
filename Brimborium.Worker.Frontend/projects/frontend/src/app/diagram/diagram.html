@@ -1,0 +1,44 @@
+<f-flow fDraggable (fLoaded)="loaded()">
+  <f-canvas>
+    <f-connection fOutputId="output1" fInputId="input1" fType="bezier"></f-connection>
+    <div fGroup fDragHandle fGroupId="group1" [fGroupPosition]="{ x: 10, y: 100 }">
+      <div fNodeOutput fOutputConnectableSide="bottom" class="bottom" fOutputId="group1output"></div>
+      Group 1
+    </div>
+
+      <div fNode fDragHandle>
+
+        <div>
+          xxxx
+        </div>
+        <div>
+          yyy
+        </div>
+        <div fNodeOutput [isSelfConnectable]="true" fOutputConnectableSide="right" class="right" fOutputId="output1">
+          oo
+        </div>
+        <div>
+          zzz
+        </div>
+
+      </div>
+
+
+      <div fNode fDragHandle  fNodeInput fInputId="input1"
+        fInputConnectableSide="left">
+        Drag me
+      </div>
+
+
+    <div fNode fDragHandle [fNodePosition]="{ x: 24, y: 24 }">
+      Drag me
+      <div>
+
+        <div fNodeOutput [isSelfConnectable]="true" fOutputConnectableSide="right" class="right" fOutputId="output2">
+        </div>
+      </div>
+
+    </div>
+
+  </f-canvas>
+</f-flow>
