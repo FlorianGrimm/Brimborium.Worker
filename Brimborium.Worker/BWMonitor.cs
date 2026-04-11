@@ -6,66 +6,72 @@ public interface IBWMonitored {
 }
 
 public interface IBWMonitorScope : IDisposable {
-    Task ReportError(Exception error);
-    Task ReportSuccess();
+    Task ReportError(Exception error, CancellationToken cancellationToken);
+    Task ReportSuccess(CancellationToken cancellationToken);
 }
 
 public interface IBWMonitor {
-    Task<IBWMonitorScope> ReportStart(IBWMonitored caller, string Scope, CancellationToken cancellationToken);
-    Task ReportEnqueue(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken);
-    Task<IBWMonitorScope> ReportExecuteMessage(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken);
+    Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken);
+    Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string Scope, CancellationToken cancellationToken);
 }
 
 public class BWMonitor : IBWMonitor {
-    public Task<IBWMonitorScope> ReportStart(IBWMonitored caller, string Scope, CancellationToken cancellationToken) {
-        throw new NotImplementedException();
-    }
+    public static readonly string ScopeExecute = "Execute";
 
-    public Task ReportEnqueue(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken) {
-        throw new NotImplementedException();
-    }
-
-    public Task<IBWMonitorScope> ReportExecuteMessage(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken) {
-        throw new NotImplementedException();
-    }
-}
-
-public class MonitorDefault : IBWMonitor {
-    private static IBWMonitor? _Instance;
-
-    public static IBWMonitor Instance => _Instance ??= new MonitorDefault();
-
-    private MonitorDefault() {
-
-    }
-
-    public Task<IBWMonitorScope> ReportStart(IBWMonitored caller, string Scope, CancellationToken cancellationToken) {
-        return Task.FromResult<IBWMonitorScope>(new BWMonitorScope());
-    }
-
-    public Task ReportEnqueue(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken) {
+    public Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 
-    public Task<IBWMonitorScope> ReportExecuteMessage(IBWMonitored caller, IBWMessage message, CancellationToken cancellationToken) {
-        return Task.FromResult<IBWMonitorScope>(new BWMonitorScope());
+    public async Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string scope, CancellationToken cancellationToken) {
+        await this.ReportEvent(caller, message, scope, "Start", cancellationToken);
+        return new BWMonitorScope(this, caller, message, scope);
+    }
+}
+
+public class BWMonitorNull : IBWMonitor {
+    private static IBWMonitor? _Instance;
+
+    public static IBWMonitor Instance => _Instance ??= new BWMonitorNull();
+
+    private BWMonitorNull() {
+
+    }
+
+    public Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken) {
+        return Task.CompletedTask;
+    }
+
+    public async Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string scope, CancellationToken cancellationToken) {
+        await this.ReportEvent(caller, message, scope, "Start", cancellationToken);
+        return new BWMonitorScope(this, caller, message, scope);
     }
 }
 public class BWMonitorScope : IBWMonitorScope {
     private bool _IsDisposed;
+    private readonly IBWMonitor _Monitor;
+    private readonly IBWMonitored _Caller;
+    private readonly IBWMessage _Message;
+    private readonly string _Scope;
+
+    public BWMonitorScope(IBWMonitor monitor, IBWMonitored caller, IBWMessage message, string scope) {
+        this._Monitor = monitor;
+        this._Caller = caller;
+        this._Message = message;
+        this._Scope = scope;
+    }
 
     public void Dispose() {
         if (this._IsDisposed) {
-        } else { 
+        } else {
             this._IsDisposed = true;
         }
     }
 
-    public Task ReportError(Exception error) {
+    public Task ReportError(Exception error, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 
-    public Task ReportSuccess() {
+    public Task ReportSuccess(CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 }

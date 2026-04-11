@@ -11,7 +11,9 @@ namespace Brimborium.Worker;
 public interface IBWMessage {
     long GetId();
 
-    bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour);
+    bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour) where T : IBWBehaviour;
+
+    bool TryAddBehaviour<T>(T behaviour) where T : IBWBehaviour;
 
     /*
     Task<TMessage> AddChildMessage<TMessage>(TMessage message)
@@ -21,9 +23,9 @@ public interface IBWMessage {
         where TMessage : IBWMessage;
     */
 
-    IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
-    IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
-    IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
+    //IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
+    //IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
+    //IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
 }
 
 public static class BWMessageId {
@@ -86,33 +88,34 @@ public abstract class BWMessageBase : IBWMessage {
     }
     */
 
-    public abstract IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
+    //public abstract IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
 
-    public abstract IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
+    //public abstract IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
 
-    public abstract IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
+    //public abstract IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
 
-    private BWBehaviour _Behaviour = new();
-    public bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour) {
-        throw new NotImplementedException();
-    }
+    private BWMessageBehaviour _Behaviour = new();
+
+    public BWMessageBehaviour Behaviour => this._Behaviour;
+
+    public bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour) where T : IBWBehaviour => this._Behaviour.TryGetBehaviour<T>(out behaviour);
+
+    public bool TryAddBehaviour<T>(T behaviour) where T : IBWBehaviour => BWMessageBehaviour.TryAddBehaviour<T>(ref this._Behaviour, behaviour);
 }
 
-public struct BWBehaviour { }
-
-public sealed class BWMessage : BWMessageBase {
-    public BWMessage() {        
+public class BWMessage : BWMessageBase {
+    public BWMessage() {
     }
 
-    public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
-        return new BWMessageWithValue<TNextValue>(nextValue);
-    }
+    //public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
+    //    return new BWMessageWithValue<TNextValue>(nextValue);
+    //}
 
-    public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
-        return new BWMessageWithResult<TNextResult>(nextResult);
-    }
+    //public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
+    //    return new BWMessageWithResult<TNextResult>(nextResult);
+    //}
 
-    public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
-        return new BWMessageWithScope<TNextScope>(nextScope);
-    }
+    //public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
+    //    return new BWMessageWithScope<TNextScope>(nextScope);
+    //}
 }

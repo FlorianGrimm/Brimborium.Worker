@@ -61,15 +61,15 @@ public sealed class BWMessageWithResult<TResult>
     public IBWMessageResult<TResult> MessageResult { get; }
 
 
-    public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
-        throw new NotImplementedException();
-    }
+    //public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
+    //    throw new NotImplementedException();
+    //}
 
-    public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
-        throw new NotImplementedException();
-    }
+    //public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
+    //    throw new NotImplementedException();
+    //}
 
-    public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
-        throw new NotImplementedException();
-    }
+    //public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
+    //    throw new NotImplementedException();
+    //}
 }

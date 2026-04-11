@@ -7,9 +7,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.29.0" />
-  </ItemGroup>
+    <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+        <PackageReference Include="Foundatio.Mediator" />
+        <PackageReference Include="Injectio" />
+        <PackageReference Include="TUnit" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
+        <PackageReference Include="Foundatio.Mediator" Version="1.0.1" />
+        <PackageReference Include="Injectio" Version="5.1.0" />
+        <PackageReference Include="TUnit" Version="1.29.0" />
+    </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Brimborium.Worker\Brimborium.Worker.csproj" />

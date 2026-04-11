@@ -19,15 +19,15 @@ public sealed class BWMessageWithScope<TScope>
 
     public TScope MessageScope { get; }
 
-    public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
-        return new BWMessageWithValueScope<TNextValue, TScope>(nextValue, this.MessageScope);
-    }
+    //public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
+    //    return new BWMessageWithValueScope<TNextValue, TScope>(nextValue, this.MessageScope);
+    //}
 
-    public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
-        return new BWMessageWithResultScope<TNextResult, TScope>(nextResult, this.MessageScope);
-    }
+    //public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
+    //    return new BWMessageWithResultScope<TNextResult, TScope>(nextResult, this.MessageScope);
+    //}
 
-    public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
-        return new BWMessageWithScope<TNextScope>(nextScope);
-    }
+    //public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
+    //    return new BWMessageWithScope<TNextScope>(nextScope);
+    //}
 }

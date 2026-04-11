@@ -22,13 +22,13 @@ public sealed class BWMessageWithValueScope<TValue, TScope>
 
     public TScope MessageScope { get; }
 
-    public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
-        return new BWMessageWithValueScope<TNextValue, TScope>(nextValue, this.MessageScope);
-    }
-    public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
-        return new BWMessageWithValueResultScope<TValue, TNextResult, TScope>(this.Value, nextResult, this.MessageScope);
-    }
-    public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
-        return new BWMessageWithValueScope<TValue, TNextScope>(this.Value, nextScope);
-    }
+    //public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
+    //    return new BWMessageWithValueScope<TNextValue, TScope>(nextValue, this.MessageScope);
+    //}
+    //public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
+    //    return new BWMessageWithValueResultScope<TValue, TNextResult, TScope>(this.Value, nextResult, this.MessageScope);
+    //}
+    //public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
+    //    return new BWMessageWithValueScope<TValue, TNextScope>(this.Value, nextScope);
+    //}
 }

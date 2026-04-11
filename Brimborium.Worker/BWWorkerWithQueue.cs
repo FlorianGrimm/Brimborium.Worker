@@ -19,7 +19,7 @@ public class BWWorkerWithQueue : BWWorker, IBWWorkerWithQueue, IBWMonitored {
             await this._SemaphoreExecution.WaitAsync(cancellationToken);
             try {
                 if (_TaskExecute is null) {
-                    var monitorScope = await this.Monitor.ReportStart(this, "Execute", cancellationToken);
+                    var monitorScope = await this.Monitor.ReportBlockStart(this, BWMessageVoid.Instance, "Execute", cancellationToken);
                     this._TaskExecute = this.ExecuteAsync(monitorScope, cancellationToken);
                 }
             } finally {
@@ -59,7 +59,7 @@ public class BWWorkerWithQueue<TValue, TMessage>
     }
 
     public async Task Execute(TMessage message, CancellationToken cancellationToken) {
-        await this.Monitor.ReportEnqueue(this, message, cancellationToken);
+        await this.Monitor.ReportEvent(this, message, "Queue", "Enqueue", cancellationToken);
         await this._Queue.Enqueue(message, cancellationToken);
     }
 
@@ -67,19 +67,20 @@ public class BWWorkerWithQueue<TValue, TMessage>
         try {
             while (await this._Queue.WaitToReadAsync(cancellationToken)) {
                 while (this._Queue.TryRead(out var message)) {
-                    var messageScope = await this.Monitor.ReportExecuteMessage(this, message, cancellationToken);
+                    var messageScope = await this.Monitor.ReportBlockStart(this, message, BWMonitor.ScopeExecute, cancellationToken);
                     try {
                         await this.ExecuteInner(message, cancellationToken);
+                        await messageScope.ReportSuccess(cancellationToken);
                     } catch (Exception error) {
-                        await messageScope.ReportError(error);
+                        await messageScope.ReportError(error,cancellationToken);
                     } finally {
                         messageScope.Dispose();
                     }
                 }
             }
-            await monitorScope.ReportSuccess();
+            await monitorScope.ReportSuccess(cancellationToken);
         } catch (Exception error) {
-            await monitorScope.ReportError(error);
+            await monitorScope.ReportError(error, cancellationToken);
         } finally {
             monitorScope.Dispose();
         }
