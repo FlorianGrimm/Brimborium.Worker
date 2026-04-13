@@ -3,52 +3,54 @@ namespace Brimborium.Worker;
 public interface IBWWorker : IBWMonitored {
 }
 
-public interface IBWWorkerWithQueue : IBWMonitored {
+public interface IBWWorkerWithQueue : IBWWorker, IBWMonitored {
     /// <summary>
     /// Starts the monitor
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task StartAsync(CancellationToken cancellationToken);
+
     /// <summary>
-    /// Stop if all work is done.
+    /// Stop this worker, if all work is done.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task StopAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Waits until all messages are processed and <see cref="StopAsync(CancellationToken)"/> was called.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task CompletionAsync(CancellationToken cancellationToken);
 }
 
+/// <summary>
+/// Process messages
+/// </summary>
+/// <typeparam name="TMessage"></typeparam>
 public interface IBWWorker<TMessage>
     : IBWWorker
     where TMessage : IBWMessage {
-    Task ExecuteMessage(TMessage message, CancellationToken cancellationToken);
+    /// <summary>
+    /// Process a message
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task ExecuteMessageAsync(TMessage message, CancellationToken cancellationToken);
 }
 
-public interface IBWWorker<TValue, TMessage>
-    : IBWWorker
-    where TMessage : IBWMessageWithValue<TValue> {
-    Task Execute(TMessage message, CancellationToken cancellationToken);
-}
-
-public class BWWorker : IBWWorker, IBWMonitored {
+/// <summary>
+/// Base worker
+/// </summary>
+public class BWWorker : BWMonitored, IBWWorker {
     public BWWorker(
         BWIdentifier identifier,
         IBWMonitor monitor
-        ) {
-        this.Monitor = monitor;
-        Identifier = identifier;
+        ) : base(identifier, monitor){
     }
-
-    public IBWMonitor Monitor { get; set; }
-
-    public BWIdentifier Identifier { get; set; }
-
-}
-
-public interface IBWMiddleware<TBWMessage>
-    where TBWMessage : IBWMessage {
-    Task ProcessMessage(TBWMessage message, CancellationToken cancellationToken);
 }
 
 public abstract class BWWorker<TMessage>
@@ -56,38 +58,34 @@ public abstract class BWWorker<TMessage>
     , IBWWorker<TMessage>
     , IBWMiddleware<TMessage>
     where TMessage : IBWMessage {
-    public BWWorker(
-            BWMiddlewareBuilder<TMessage> middlewareBuilder,
-            BWIdentifier identifier, IBWMonitor monitor
-        ) : base(
-            identifier, monitor
-        ) {
-        this.Middleware = middlewareBuilder.Build(this);
-    }
 
     public BWWorker(
-            IBWMiddleware<TMessage> middleware,
-            BWIdentifier identifier, IBWMonitor monitor
-        ) : base(
-            identifier, monitor
-        ) {
-        this.Middleware = middleware;
-    }
-    public BWWorker(
-            BWIdentifier identifier, IBWMonitor monitor
-        ) : base(
-            identifier, monitor
-        ) {
-        this.Middleware = this;
+        BWMiddlewareBuilder<TMessage>? middlewareBuilder,
+        BWIdentifier identifier, IBWMonitor monitor
+    ) : base(
+        identifier, monitor
+    ) {
+        this.Middleware = (
+                middlewareBuilder
+                ?? BWMiddlewareBuilder<TMessage>.CreateDefault(default)
+            ).Build(this, monitor);
     }
 
-    protected IBWMiddleware<TMessage> Middleware;
-
-    public virtual async Task ExecuteMessage(TMessage message, CancellationToken cancellationToken) {
-        await this.Middleware.ProcessMessage(message, cancellationToken);
+    protected TBWInvoker RegisterNext<TBWInvoker>(
+        TBWInvoker next,
+        BWIdentifier identifier
+    ) where TBWInvoker : IBWInvoker {
+        next.SetCaller(this, identifier);
+        return next;
     }
 
-    Task IBWMiddleware<TMessage>.ProcessMessage(TMessage message, CancellationToken cancellationToken) {
+    protected BWMiddleware<TMessage> Middleware;
+
+    public virtual async Task ExecuteMessageAsync(TMessage message, CancellationToken cancellationToken) {
+        await this.Middleware.ProcessMessageAsync(message, cancellationToken);
+    }
+
+    Task IBWMiddleware<TMessage>.ProcessMessageAsync(TMessage message, CancellationToken cancellationToken) {
         return this.ExecuteLogic(message, cancellationToken);
     }
 

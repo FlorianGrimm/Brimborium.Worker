@@ -1,18 +1,18 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 
 namespace Brimborium.Worker;
 
-public interface IBWQueue<TValue, TMessage>
-    where TMessage : IBWMessageWithValue<TValue> {
+public interface IBWQueue<TMessage>
+    where TMessage : IBWMessage {
     Task Enqueue(TMessage message, CancellationToken cancellationToken);
     ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken);
     bool TryRead([System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TMessage item);
+    Task StopAsync(CancellationToken cancellationToken);
 }
 
-public class BWQueue<TValue, TMessage>
-    : IBWQueue<TValue, TMessage>
-    where TMessage : IBWMessageWithValue<TValue> {
+public sealed class BWQueue<TValue, TMessage>
+    : IBWQueue<TMessage>
+    where TMessage : IBWMessage {
     private readonly Channel<TMessage> _Channel;
 
     public BWQueue(
@@ -20,6 +20,8 @@ public class BWQueue<TValue, TMessage>
         ) {
         this._Channel = channel;
     }
+
+    public Channel<TMessage> Channel => this._Channel;
 
     public async Task Enqueue(TMessage message, CancellationToken cancellationToken) {
         await this._Channel.Writer.WriteAsync(message, cancellationToken);
@@ -31,5 +33,10 @@ public class BWQueue<TValue, TMessage>
 
     public async ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken) {
         return await this._Channel.Reader.WaitToReadAsync(cancellationToken);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) {
+        this._Channel.Writer.TryComplete();
+        return Task.CompletedTask;
     }
 }

@@ -5,6 +5,20 @@ public interface IBWMonitored {
     IBWMonitor Monitor { get; }
 }
 
+public class BWMonitored : IBWMonitored {
+    public BWMonitored(
+            BWIdentifier identifier,
+            IBWMonitor monitor 
+        ) {
+        this.Identifier = identifier;
+        this.Monitor = monitor;
+    }
+    public BWIdentifier Identifier { get; set; }
+
+    public IBWMonitor Monitor { get; set; }
+}
+
+
 public interface IBWMonitorScope : IDisposable {
     Task ReportError(Exception error, CancellationToken cancellationToken);
     Task ReportSuccess(CancellationToken cancellationToken);
@@ -12,17 +26,18 @@ public interface IBWMonitorScope : IDisposable {
 
 public interface IBWMonitor {
     Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken);
-    Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string Scope, CancellationToken cancellationToken);
+    Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string scope, CancellationToken cancellationToken);
 }
 
 public class BWMonitor : IBWMonitor {
     public static readonly string ScopeExecute = "Execute";
+    public static readonly string ScopeInvoke = "Invoke";
 
-    public Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken) {
+    public virtual Task ReportEvent(IBWMonitored caller, IBWMessage message, string scope, string eventName, CancellationToken cancellationToken) {
         return Task.CompletedTask;
     }
 
-    public async Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string scope, CancellationToken cancellationToken) {
+    public virtual async Task<IBWMonitorScope> ReportBlockStart(IBWMonitored caller, IBWMessage message, string scope, CancellationToken cancellationToken) {
         await this.ReportEvent(caller, message, scope, "Start", cancellationToken);
         return new BWMonitorScope(this, caller, message, scope);
     }

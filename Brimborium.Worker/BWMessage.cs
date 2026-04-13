@@ -1,7 +1,3 @@
-using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Net.Http.Headers;
-
 namespace Brimborium.Worker;
 
 
@@ -9,30 +5,21 @@ namespace Brimborium.Worker;
 /// The methods that operate with <see cref="IBWMessage"/> must report to <see cref="IBWMonitor"/>.
 /// </summary>
 public interface IBWMessage {
+    List<long>? ListChildMessage { get; }
+
+    List<long>? ListNextMessage { get; }
+
     long GetId();
 
-    bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour) where T : IBWBehaviour;
+    bool TryGetBehaviour<T>(int index, [MaybeNullWhen(false)] out T behaviour) where T : class;
 
-    bool TryAddBehaviour<T>(T behaviour) where T : IBWBehaviour;
+    void SetBehaviour<T>(int index, T behaviour) where T : class;
 
-    /*
-    Task<TMessage> AddChildMessage<TMessage>(TMessage message)
-        where TMessage : IBWMessage;
+    void RemoveBehaviour<T>(T behaviour) where T : class;
 
-    Task<TMessage> AddNextMessage<TMessage>(TMessage message)
-        where TMessage : IBWMessage;
-    */
+    void AddNextMessage<TMessage>(TMessage nextMessage) where TMessage : IBWMessage;
 
-    //IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
-    //IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
-    //IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
-}
-
-public static class BWMessageId {
-    private static long _Id = 1;
-    public static long GetId() {
-        return System.Threading.Interlocked.Increment(ref _Id);
-    }
+    void AddChildMessage<TMessage>(TMessage childMessage) where TMessage : IBWMessage;
 }
 
 public abstract class BWMessageBase : IBWMessage {
@@ -87,35 +74,65 @@ public abstract class BWMessageBase : IBWMessage {
         }
     }
     */
-
-    //public abstract IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue);
-
-    //public abstract IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult);
-
-    //public abstract IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope);
-
     private BWMessageBehaviour _Behaviour = new();
 
     public BWMessageBehaviour Behaviour => this._Behaviour;
 
-    public bool TryGetBehaviour<T>([MaybeNullWhen(false)] out T behaviour) where T : IBWBehaviour => this._Behaviour.TryGetBehaviour<T>(out behaviour);
+    public bool TryGetBehaviour<T>(int index, [MaybeNullWhen(false)] out T behaviour) where T : class {
+        lock (this) {
+            return this._Behaviour.TryGetBehaviour<T>(index, out behaviour);
+        }
+    }
 
-    public bool TryAddBehaviour<T>(T behaviour) where T : IBWBehaviour => BWMessageBehaviour.TryAddBehaviour<T>(ref this._Behaviour, behaviour);
+    public void SetBehaviour<T>(int index, T behaviour) where T : class {
+        lock (this) {
+            BWMessageBehaviour.SetBehaviour<T>(ref this._Behaviour, index, behaviour);
+        }
+    }
+
+    public void RemoveBehaviour<T>(T behaviour) where T : class {
+        lock (this) {
+            this._Behaviour.RemoveBehaviour<T>(behaviour);
+        }
+    }
+
+    private List<long>? _ListNextMessage;
+    public List<long>? ListNextMessage => this._ListNextMessage;
+    public void AddNextMessage<TMessage>(TMessage nextMessage) where TMessage : IBWMessage {
+        (this._ListNextMessage ??= new()).Add(nextMessage.GetId());
+    }
+
+    private List<long>? _ListChildMessage;
+    public List<long>? ListChildMessage => this._ListChildMessage;
+    public void AddChildMessage<TMessage>(TMessage childMessage) where TMessage : IBWMessage {
+        (this._ListChildMessage ??= new()).Add(childMessage.GetId());
+        //childMessage.SetParentMessage(this)
+    }
 }
 
 public class BWMessage : BWMessageBase {
     public BWMessage() {
     }
-
-    //public override IBWMessageWithValue<TNextValue> CreateWithValue<TNextValue>(TNextValue nextValue) {
-    //    return new BWMessageWithValue<TNextValue>(nextValue);
-    //}
-
-    //public override IBWMessageWithResult<TNextResult> CreateWithResult<TNextResult>(IBWMessageResult<TNextResult> nextResult) {
-    //    return new BWMessageWithResult<TNextResult>(nextResult);
-    //}
-
-    //public override IBWMessageWithScope<TNextScope> CreateWithScope<TNextScope>(TNextScope nextScope) {
-    //    return new BWMessageWithScope<TNextScope>(nextScope);
-    //}
 }
+
+/*
+public class BWMessageCommand
+    : BWMessageBase
+    , Foundatio.Mediator.ICommand {
+    public BWMessageCommand() {
+    }
+
+    [Foundatio.Mediator.Handler]
+    public virtual async Task HandleAsync(
+        BWMessageCommand command,
+        Foundatio.Mediator.IMediator mediator,
+        CancellationToken cancellationToken
+        ) {
+        await command.InvokeAsync(mediator, cancellationToken);
+    }
+
+    protected async Task InvokeAsync(IMediator mediator, CancellationToken cancellationToken) {
+        await mediator.InvokeAsync(this, cancellationToken);
+    }
+}
+*/

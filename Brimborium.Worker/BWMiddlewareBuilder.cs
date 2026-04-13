@@ -1,18 +1,34 @@
 ﻿namespace Brimborium.Worker;
 
-// TODO: seams useless in this stage...
+/// <summary>
+/// middleware for processing message
+/// </summary>
+/// <typeparam name="TBWMessage"></typeparam>
+public interface IBWMiddleware<TBWMessage>
+    where TBWMessage : IBWMessage {
+    Task ProcessMessageAsync(TBWMessage message, CancellationToken cancellationToken);
+}
 
 public interface IBWMiddlewareBuilder<TMessage>
     where TMessage : IBWMessage {
     IBWMiddleware<TMessage> CreateMiddleware(
             IBWMiddleware<TMessage> caller,
-            IBWMiddleware<TMessage> next
+            IBWMiddleware<TMessage> next, 
+            IBWMonitor monitor
         );
 }
 
 public sealed class BWMiddlewareBuilder<TMessage>
     where TMessage : IBWMessage
     {
+    public static BWMiddlewareBuilder<TMessage> CreateDefault(
+            string? scope
+        ) {
+        BWMiddlewareBuilder<TMessage> result = new();
+        result.AddBWMonitorMiddlewareBuilder(scope ?? BWMonitor.ScopeExecute);
+        return result;
+    }
+
     private readonly List<IBWMiddlewareBuilder<TMessage>> _ListBuilder = new();
     private bool _Frozen;
 
@@ -30,8 +46,6 @@ public sealed class BWMiddlewareBuilder<TMessage>
         return this;
     }
 
-
-
     public BWMiddlewareBuilder<TMessage> AddRange(
             params IBWMiddlewareBuilder<TMessage>[] builder
         ) {
@@ -47,8 +61,9 @@ public sealed class BWMiddlewareBuilder<TMessage>
         return this;
     }
 
-    public IBWMiddleware<TMessage> Build(
-            IBWMiddleware<TMessage> caller
+    public BWMiddleware<TMessage> Build(
+            IBWMiddleware<TMessage> caller, 
+            IBWMonitor monitor
         ) {
         this._Frozen = true;
         {
@@ -57,9 +72,23 @@ public sealed class BWMiddlewareBuilder<TMessage>
                 0 <= index;
                 --index) {
                 var builder = this._ListBuilder[index];
-                result = builder.CreateMiddleware(caller, result);
+                result = builder.CreateMiddleware(caller, result, monitor);
             }
             return result;
         }
+    }
+}
+
+public struct BWMiddleware<TBWMessage> : IBWMiddleware<TBWMessage>
+    where TBWMessage : IBWMessage {
+
+    public BWMiddleware(IBWMiddleware<TBWMessage> middleware) {
+        this.Middleware = middleware;
+    }
+
+    public IBWMiddleware<TBWMessage> Middleware { get; set; }
+
+    public Task ProcessMessageAsync(TBWMessage message, CancellationToken cancellationToken) {
+        return this.Middleware.ProcessMessageAsync(message, cancellationToken);
     }
 }

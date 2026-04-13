@@ -1,32 +1,42 @@
 ﻿namespace Brimborium.Worker;
 
+public static partial class BWMiddlewareBuilderExtension {
+    extension<TMessage>(BWMiddlewareBuilder<TMessage> that)
+        where TMessage : IBWMessage {
+        public BWMiddlewareBuilder<TMessage> AddBWMonitorMiddlewareBuilder(
+                string scope
+            ) {
+            var builder = new BWMonitorMiddlewareBuilder<TMessage>(scope);
+            return that.Add(builder);
+        }
+    }
+}
 
 public class BWMonitorMiddlewareBuilder<TMessage>
     : IBWMiddlewareBuilder<TMessage>
     where TMessage : IBWMessage {
     private readonly string _Scope;
-    private readonly IBWMonitor _Monitor;
 
     public BWMonitorMiddlewareBuilder(
-            string scope,
-            IBWMonitor monitor
+            string scope
         ) {
         this._Scope = scope;
-        this._Monitor = monitor;
     }
 
     public IBWMiddleware<TMessage> CreateMiddleware(
-        IBWMiddleware<TMessage> caller,
-        IBWMiddleware<TMessage> next) {
-        if (caller is IBWMonitored monitored) {
-            return new BWMonitorMiddleware<TMessage>(
-                monitored,
-                this._Scope,
-                this._Monitor,
-                next);
-        } else {
-            return next;
+            IBWMiddleware<TMessage> caller,
+            IBWMiddleware<TMessage> next,
+            IBWMonitor monitor
+        ) {
+        if (caller is not IBWMonitored monitored) {
+            monitored = new BWMonitored(new BWIdentifier(""), monitor);
         }
+
+        return new BWMonitorMiddleware<TMessage>(
+            monitored,
+            this._Scope,
+            monitor,
+            next);
     }
 }
 
@@ -50,14 +60,16 @@ public class BWMonitorMiddleware<TMessage>
         this._Next = next;
     }
 
-    public async Task ProcessMessage(TMessage message, CancellationToken cancellationToken) {
-        using (var monitorScope = this._Monitor.ReportBlockStart(
+    public async Task ProcessMessageAsync(TMessage message, CancellationToken cancellationToken) {
+        using (var monitorScope = await this._Monitor.ReportBlockStart(
             this._Caller,
             message,
             this._Scope,
             cancellationToken
-            )) { 
-            await this._Next.ProcessMessage(message, cancellationToken);
+            )) {
+            message.SetBehaviour(0, monitorScope);
+            await this._Next.ProcessMessageAsync(message, cancellationToken);
+            message.RemoveBehaviour(monitorScope);
         }
     }
 }

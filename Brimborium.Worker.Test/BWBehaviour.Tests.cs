@@ -5,13 +5,22 @@ public class BWBehaviour {
     public async Task BWBehaviourTest001() { 
         BWMessage message = new BWMessage();
         var sutTestBehaviour = new TestBehaviour();
-        message.TryAddBehaviour(sutTestBehaviour);
+        message.SetBehaviour(0, sutTestBehaviour);
 
-        var success = message.TryGetBehaviour<TestBehaviour>(out var actualTestBehaviour);
+        { 
+        var success = message.TryGetBehaviour<TestBehaviour>(0, out var actualTestBehaviour);
         await Assert.That(success).IsTrue();
         await Assert.That(actualTestBehaviour).IsSameReferenceAs(sutTestBehaviour);
+        }
+
+        message.RemoveBehaviour(sutTestBehaviour);
+
+        {
+            var success = message.TryGetBehaviour<TestBehaviour>(0, out var actualTestBehaviour);
+            await Assert.That(success).IsFalse();
+        }
     }
     
-    class TestBehaviour : IBWBehaviour { 
+    class TestBehaviour { 
     }
 }
