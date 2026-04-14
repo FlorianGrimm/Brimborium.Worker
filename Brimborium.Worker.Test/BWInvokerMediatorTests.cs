@@ -9,12 +9,14 @@ public class BWInvokerMediatorTests {
     public async Task BWInvokerMediatorTest001() {
         CancellationTokenSource cts = new CancellationTokenSource();
         Microsoft.Extensions.DependencyInjection.ServiceCollection serviceBuilder = new();
-        IBWMonitor monitor = BWMonitorNull.Instance;
+        IBWMonitor monitor = new BWMonitorConsole();
         serviceBuilder.AddSingleton<IBWMonitor>(monitor);
         serviceBuilder.AddMediator((options) => {
             options.AddAssembly<IBWMonitor>();
             options.AddAssembly<BWInvokerMediatorTests>();
         });
+        serviceBuilder.AddBrimboriumWorker();
+        serviceBuilder.AddBrimboriumWorkerTest();
         var globalServiceProvider = serviceBuilder.BuildServiceProvider();
         using var scope = globalServiceProvider.CreateScope();
         var scopeServiceProvider = scope.ServiceProvider;
@@ -22,7 +24,8 @@ public class BWInvokerMediatorTests {
         BWInvokerMediator1Command cmd1 = new(1);
         await mediator.InvokeAsync(cmd1, cts.Token);
         var invokerMediator3Worker = scopeServiceProvider.GetRequiredService<BWInvokerMediator3Worker>();
-        await Assert.That(invokerMediator3Worker.List).IsEquivalentTo(new List<int>() { 1 });
+        var actList = invokerMediator3Worker.List.Select(item => item.Value).ToList();
+        await Assert.That(actList).IsEquivalentTo(new List<int>() { 3, 4 });
 
     }
 }
@@ -41,9 +44,9 @@ public class BWInvokerMediator1Worker : BWWorker<BWInvokerMediator1Command> {
             (sp) => {
                 IBWMonitor monitor = sp.GetRequiredService<IBWMonitor>();
                 IMediator mediator = sp.GetRequiredService<IMediator>();
-                BWInvokerMediator<BWInvokerMediator2Command> next = new(mediator, monitor);
+                BWInvokerMediatorCommand<BWInvokerMediator2Command> next = new(mediator, default, monitor);
                 var middlewareBuilder = new BWMiddlewareBuilder<BWInvokerMediator1Command>()
-                    .AddBWMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
+                    .AddMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
                 return new BWInvokerMediator1Worker(next, middlewareBuilder, monitor);
             });
     }
@@ -57,7 +60,7 @@ public class BWInvokerMediator1Worker : BWWorker<BWInvokerMediator1Command> {
         await worker.ExecuteMessageAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    public static readonly BWIdentifier ClassIdentifier = new();
+    public static readonly BWIdentifier ClassIdentifier = new(nameof(BWInvokerMediator1Worker));
     private readonly IBWInvoker<BWInvokerMediator2Command> _Next;
 
     public BWInvokerMediator1Worker(
@@ -71,19 +74,19 @@ public class BWInvokerMediator1Worker : BWWorker<BWInvokerMediator1Command> {
         this._Next = this.RegisterNext(next, this.Identifier.CreateChild("Next"));
     }
 
-    public override async Task ExecuteLogic(BWInvokerMediator1Command message, CancellationToken cancellationToken) {
+    protected override async Task ExecuteLogic(BWInvokerMediator1Command message, CancellationToken cancellationToken) {
         if (message.Value <= 0) {
-            await this.Monitor.ReportEvent(this, message, "", "",cancellationToken);
+            await this.Monitor.ReportEvent(this, message, "", "", cancellationToken);
             return;
         }
-        
+
         {
             BWInvokerMediator2Command next = new(message.Value * 2);
-            await this._Next.ExecuteAsync(message, next, cancellationToken);
+            await this._Next.InvokeAsync(message, next, this.Monitor, cancellationToken);
         }
         {
             BWInvokerMediator2Command next = new(message.Value * 2 + 1);
-            await this._Next.ExecuteAsync(message, next, cancellationToken);
+            await this._Next.InvokeAsync(message, next, this.Monitor, cancellationToken);
         }
     }
 }
@@ -103,9 +106,9 @@ public class BWInvokerMediator2Worker : BWWorker<BWInvokerMediator2Command> {
             (sp) => {
                 IBWMonitor monitor = sp.GetRequiredService<IBWMonitor>();
                 IMediator mediator = sp.GetRequiredService<IMediator>();
-                BWInvokerMediator<BWInvokerMediator3Command> next = new(mediator, monitor);
+                BWInvokerMediatorCommand<BWInvokerMediator3Command> next = new(mediator, default, monitor);
                 var middlewareBuilder = new BWMiddlewareBuilder<BWInvokerMediator2Command>()
-                    .AddBWMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
+                    .AddMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
                 return new BWInvokerMediator2Worker(next, middlewareBuilder, monitor);
             });
     }
@@ -119,7 +122,7 @@ public class BWInvokerMediator2Worker : BWWorker<BWInvokerMediator2Command> {
         await worker.ExecuteMessageAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    public static readonly BWIdentifier ClassIdentifier = new();
+    public static readonly BWIdentifier ClassIdentifier = new(nameof(BWInvokerMediator2Worker));
     private readonly IBWInvoker<BWInvokerMediator3Command> _Next;
 
     public BWInvokerMediator2Worker(
@@ -133,9 +136,9 @@ public class BWInvokerMediator2Worker : BWWorker<BWInvokerMediator2Command> {
         this._Next = this.RegisterNext(next, this.Identifier.CreateChild("Next"));
     }
 
-    public override async Task ExecuteLogic(BWInvokerMediator2Command message, CancellationToken cancellationToken) {
+    protected override async Task ExecuteLogic(BWInvokerMediator2Command message, CancellationToken cancellationToken) {
         BWInvokerMediator3Command next = new(message.Value + 1);
-        await this._Next.ExecuteAsync(message, next, cancellationToken);
+        await this._Next.InvokeAsync(message, next, this.Monitor, cancellationToken);
     }
 }
 
@@ -154,7 +157,7 @@ public class BWInvokerMediator3Worker : BWWorker<BWInvokerMediator3Command> {
                 IBWMonitor monitor = sp.GetRequiredService<IBWMonitor>();
                 IMediator mediator = sp.GetRequiredService<IMediator>();
                 var middlewareBuilder = new BWMiddlewareBuilder<BWInvokerMediator3Command>()
-                    .AddBWMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
+                    .AddMonitorMiddlewareBuilder(BWMonitor.ScopeExecute);
                 return new BWInvokerMediator3Worker(middlewareBuilder, monitor);
             });
     }
@@ -168,7 +171,7 @@ public class BWInvokerMediator3Worker : BWWorker<BWInvokerMediator3Command> {
         await worker.ExecuteMessageAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    public static readonly BWIdentifier ClassIdentifier = new();
+    public static readonly BWIdentifier ClassIdentifier = new(nameof(BWInvokerMediator3Worker));
     public readonly List<BWInvokerMediator3Command> List = new();
 
     public BWInvokerMediator3Worker(
@@ -180,9 +183,11 @@ public class BWInvokerMediator3Worker : BWWorker<BWInvokerMediator3Command> {
         ) {
     }
 
-    public override async Task ExecuteLogic(BWInvokerMediator3Command message, CancellationToken cancellationToken) {
+    protected override async Task ExecuteLogic(BWInvokerMediator3Command message, CancellationToken cancellationToken) {
         lock (this.List) {
             this.List.Add(message);
         }
+
+        System.Console.Out.WriteLine($"{this.Identifier.Identifier} - Result - {message.Value}");
     }
 }

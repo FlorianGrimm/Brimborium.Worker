@@ -3,7 +3,7 @@
 public static partial class BWMiddlewareBuilderExtension {
     extension<TMessage>(BWMiddlewareBuilder<TMessage> that)
         where TMessage : IBWMessage {
-        public BWMiddlewareBuilder<TMessage> AddBWMonitorMiddlewareBuilder(
+        public BWMiddlewareBuilder<TMessage> AddMonitorMiddlewareBuilder(
                 string scope
             ) {
             var builder = new BWMonitorMiddlewareBuilder<TMessage>(scope);
@@ -12,31 +12,23 @@ public static partial class BWMiddlewareBuilderExtension {
     }
 }
 
-public class BWMonitorMiddlewareBuilder<TMessage>
+public class BWMonitorMiddlewareBuilder<TMessage>(
+        string scope
+        )
     : IBWMiddlewareBuilder<TMessage>
     where TMessage : IBWMessage {
-    private readonly string _Scope;
-
-    public BWMonitorMiddlewareBuilder(
-            string scope
-        ) {
-        this._Scope = scope;
-    }
+    private readonly string _Scope = scope;
 
     public IBWMiddleware<TMessage> CreateMiddleware(
             IBWMiddleware<TMessage> caller,
             IBWMiddleware<TMessage> next,
             IBWMonitor monitor
         ) {
-        if (caller is not IBWMonitored monitored) {
-            monitored = new BWMonitored(new BWIdentifier(""), monitor);
-        }
+        var monitored = (caller is IBWMonitored callerMonitored)
+            ? callerMonitored
+            : new BWMonitored(new BWIdentifier("MonitorMiddleware"), monitor);
 
-        return new BWMonitorMiddleware<TMessage>(
-            monitored,
-            this._Scope,
-            monitor,
-            next);
+        return new BWMonitorMiddleware<TMessage>(monitored, this._Scope, monitor, next);
     }
 }
 

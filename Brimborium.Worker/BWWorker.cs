@@ -89,5 +89,5 @@ public abstract class BWWorker<TMessage>
         return this.ExecuteLogic(message, cancellationToken);
     }
 
-    public abstract Task ExecuteLogic(TMessage message, CancellationToken cancellationToken);
+    protected abstract Task ExecuteLogic(TMessage message, CancellationToken cancellationToken);
 }

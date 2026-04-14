@@ -1,6 +1,6 @@
-﻿namespace Brimborium.Worker.Test;
+﻿namespace Brimborium.Worker;
 
-public class BWBehaviour {
+public class BWBehaviourTests {
     [Test]
     public async Task BWBehaviourTest001() { 
         BWMessage message = new BWMessage();

@@ -17,10 +17,10 @@ public class BWWorkerDelegate<TMessageIn, TMessageOut>
         identifier, monitor
     ) {
         this._InvokerDelegate = invokerDelegate;
-        this._InvokerNext = invokerNext;
+        this._InvokerNext = this.RegisterNext(invokerNext, this.Identifier.CreateChild("Next"));
     }
 
-    public override async Task ExecuteLogic(TMessageIn message, CancellationToken cancellationToken) {
+    protected override async Task ExecuteLogic(TMessageIn message, CancellationToken cancellationToken) {
         await this._InvokerDelegate(message, this._InvokerNext, cancellationToken).ConfigureAwait(false);
     }
 }

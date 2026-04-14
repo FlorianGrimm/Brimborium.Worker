@@ -10,7 +10,7 @@ public interface IBWQueue<TMessage>
     Task StopAsync(CancellationToken cancellationToken);
 }
 
-public sealed class BWQueue<TValue, TMessage>
+public sealed class BWQueue<TMessage>
     : IBWQueue<TMessage>
     where TMessage : IBWMessage {
     private readonly Channel<TMessage> _Channel;

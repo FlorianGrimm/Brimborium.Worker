@@ -48,7 +48,7 @@ public abstract class BWInvoker<TMessage>
         ) {
         this._Caller = this;
         this._Monitor = monitor;
-        this._Identifier = new BWIdentifier();
+        this._Identifier = new BWIdentifier("BWInvoker");
 
         this.Middleware = (middlewareBuilder is { })
             ? middlewareBuilder.Build(this, monitor)
@@ -58,6 +58,7 @@ public abstract class BWInvoker<TMessage>
     public void SetCaller(IBWWorker caller, BWIdentifier identifier) {
         this._Caller = caller;
         this._Identifier = identifier;
+        this.Middleware.SetCaller(caller, identifier);
     }
 
     public async Task ExecuteAsync(TMessage message, CancellationToken cancellationToken) {
@@ -86,12 +87,22 @@ public abstract class BWInvoker<TMessage>
 public static class IBWInvokerExtension {
     extension<TMessage>(IBWInvoker<TMessage> that)
         where TMessage : IBWMessage {
-        public async Task ExecuteAsync<TIncomingMessage>(
+        //public async Task ExecuteAsync<TIncomingMessage>(
+        //    TIncomingMessage incomingMessage,
+        //    TMessage nextMessage, 
+        //    CancellationToken cancellationToken)
+        //    where TIncomingMessage : IBWMessage {
+        //    incomingMessage.AddNextMessage(nextMessage);
+        //    await that.ExecuteAsync(nextMessage, cancellationToken);
+        //}
+
+        public async Task InvokeAsync<TIncomingMessage>(
             TIncomingMessage incomingMessage,
-            TMessage nextMessage, 
+            TMessage nextMessage,
+            IBWMonitor monitor,
             CancellationToken cancellationToken)
             where TIncomingMessage : IBWMessage {
-            incomingMessage.AddNextMessage(nextMessage);
+            await monitor.ReportNextMessage(incomingMessage, nextMessage, cancellationToken);
             await that.ExecuteAsync(nextMessage, cancellationToken);
         }
     }
@@ -101,12 +112,12 @@ public static class IBWInvokerExtension {
 /// TODO
 /// </summary>
 /// <typeparam name="TMessage"></typeparam>
-public class BWInvokerMediator<TMessage>
+public class BWInvokerMediatorCommand<TMessage>
     : BWInvoker<TMessage>
-    where TMessage : IBWMessage {
+    where TMessage : IBWMessage, Foundatio.Mediator.ICommand {
     private readonly IMediator _Mediator;
 
-    public BWInvokerMediator(
+    public BWInvokerMediatorCommand(
         IMediator mediator,
         BWMiddlewareBuilder<TMessage>? middlewareBuilder,
         IBWMonitor monitor
@@ -120,6 +131,30 @@ public class BWInvokerMediator<TMessage>
         await this._Mediator.InvokeAsync(message, cancellationToken);
     }
 }
+/// <summary>
+/// TODO
+/// </summary>
+/// <typeparam name="TMessage"></typeparam>
+public class BWInvokerMediatorPublish<TMessage>
+    : BWInvoker<TMessage>
+    where TMessage : IBWMessage, Foundatio.Mediator.INotification {
+    private readonly IMediator _Mediator;
+
+    public BWInvokerMediatorPublish(
+        IMediator mediator,
+        BWMiddlewareBuilder<TMessage>? middlewareBuilder,
+        IBWMonitor monitor
+    ) : base(
+        middlewareBuilder,
+        monitor
+    ) {
+        this._Mediator = mediator;
+    }
+    public override async Task ExecuteLogicAsync(TMessage message, CancellationToken cancellationToken) {
+        await this._Mediator.PublishAsync(message, cancellationToken);
+    }
+}
+
 
 public class BWInvokerToList<TMessage>
     : BWInvoker<TMessage>

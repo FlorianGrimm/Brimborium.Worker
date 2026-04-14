@@ -25,14 +25,18 @@ public class BWWorkerWithQueue<TMessage>
             identifier, monitor
         ) {
         this._Queue = queue;
-        this._InvokerNext = invokerNext;
+        this._InvokerNext = this.RegisterNext(invokerNext, this.Identifier.CreateChild("Next"));
         this._CompletionSource = new();
     }
 
-    public override async Task ExecuteLogic(TMessage message, CancellationToken cancellationToken) {
+    public override async Task ExecuteMessageAsync(TMessage message, CancellationToken cancellationToken) {
         var scope = await this.Monitor.ReportBlockStart(this, message, "Queue", cancellationToken);
         BWBehaviourQueueScope queueScope = new(scope);
         message.SetBehaviour(0, queueScope);
+        await base.ExecuteMessageAsync(message, cancellationToken);
+    }
+
+    protected override async Task ExecuteLogic(TMessage message, CancellationToken cancellationToken) {
         await this._Queue.Enqueue(message, cancellationToken);
     }
 
@@ -92,95 +96,3 @@ public class BWWorkerWithQueue<TMessage>
         return this._CompletionSource.Task;
     }
 }
-/*
-public class BWWorkerWithQueue : BWWorker, IBWWorkerWithQueue, IBWMonitored {
-    public BWWorkerWithQueue(
-            BWIdentifier identifier,
-            IBWMonitor monitor
-        ) : base(identifier, monitor) {
-    }
-
-    protected SemaphoreSlim? _SemaphoreExecution;
-    protected Task? _TaskExecute;
-    public virtual async Task StartAsync(CancellationToken cancellationToken) {
-        if (_TaskExecute is null) {
-            System.Threading.Interlocked.CompareExchange(
-                ref this._SemaphoreExecution,
-                new(1, 1),
-                null
-            );
-            await this._SemaphoreExecution.WaitAsync(cancellationToken);
-            try {
-                if (_TaskExecute is null) {
-                    var monitorScope = await this.Monitor.ReportBlockStart(this, BWMessageVoid.Instance, "Execute", cancellationToken);
-                    this._TaskExecute = this.ExecuteAsync(monitorScope, cancellationToken);
-                }
-            } finally {
-                this._SemaphoreExecution.Release();
-            }
-        }
-    }
-
-    public virtual async Task ExecuteAsync(IBWMonitorScope monitorScope, CancellationToken cancellationToken) {
-        monitorScope.Dispose();
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken) {
-        return Task.CompletedTask;
-    }
-
-    public Task CompletionAsync(CancellationToken cancellationToken) {
-        return Task.CompletedTask;
-    }
-}
-
-public class BWWorkerWithQueue<TValue, TMessage>
-    : BWWorkerWithQueue
-    , IBWWorker<TMessage>
-    where TMessage : IBWMessage {
-    private readonly IBWQueue<TMessage> _Queue;
-
-    public BWWorkerWithQueue(
-            IBWQueue<TMessage> queue,
-            BWIdentifier identifier,
-            IBWMonitor monitor
-        ) : base(
-            identifier,
-            monitor
-        ) {
-        this._Queue = queue;
-    }
-
-    public async Task ExecuteMessage(TMessage message, CancellationToken cancellationToken) {
-        await this.Monitor.ReportEvent(this, message, "Queue", "Enqueue", cancellationToken);
-        await this._Queue.Enqueue(message, cancellationToken);
-    }
-
-    public override async Task ExecuteAsync(IBWMonitorScope monitorScope, CancellationToken cancellationToken) {
-        try {
-            while (await this._Queue.WaitToReadAsync(cancellationToken)) {
-                while (this._Queue.TryRead(out var message)) {
-                    var messageScope = await this.Monitor.ReportBlockStart(this, message, BWMonitor.ScopeExecute, cancellationToken);
-                    try {
-                        await this.ExecuteInner(message, cancellationToken);
-                        await messageScope.ReportSuccess(cancellationToken);
-                    } catch (Exception error) {
-                        await messageScope.ReportError(error,cancellationToken);
-                    } finally {
-                        messageScope.Dispose();
-                    }
-                }
-            }
-            await monitorScope.ReportSuccess(cancellationToken);
-        } catch (Exception error) {
-            await monitorScope.ReportError(error, cancellationToken);
-        } finally {
-            monitorScope.Dispose();
-        }
-    }
-
-    protected virtual Task ExecuteInner(TMessage message, CancellationToken cancellationToken) {
-        return Task.CompletedTask;
-    }
-}
-*/

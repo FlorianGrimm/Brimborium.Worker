@@ -25,7 +25,7 @@ public sealed class BWMiddlewareBuilder<TMessage>
             string? scope
         ) {
         BWMiddlewareBuilder<TMessage> result = new();
-        result.AddBWMonitorMiddlewareBuilder(scope ?? BWMonitor.ScopeExecute);
+        result.AddMonitorMiddlewareBuilder(scope ?? BWMonitor.ScopeExecute);
         return result;
     }
 
@@ -74,7 +74,7 @@ public sealed class BWMiddlewareBuilder<TMessage>
                 var builder = this._ListBuilder[index];
                 result = builder.CreateMiddleware(caller, result, monitor);
             }
-            return result;
+            return new(result);
         }
     }
 }
@@ -90,5 +90,12 @@ public struct BWMiddleware<TBWMessage> : IBWMiddleware<TBWMessage>
 
     public Task ProcessMessageAsync(TBWMessage message, CancellationToken cancellationToken) {
         return this.Middleware.ProcessMessageAsync(message, cancellationToken);
+    }
+
+    public void SetCaller(IBWWorker caller, BWIdentifier identifier) {
+        if (ReferenceEquals(caller, this.Middleware)) { return; }
+        if (this.Middleware is IBWInvoker invoker) { 
+            invoker.SetCaller(caller, identifier);
+        }
     }
 }
