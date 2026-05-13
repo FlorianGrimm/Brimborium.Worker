@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="Brimborium.Worker.Test/Brimborium.Worker.Test.csproj" />
   <Project Path="Brimborium.Worker/Brimborium.Worker.csproj" />
   <Project Path="Sample.Data.WebApp/Sample.Data.WebApp.csproj" Id="fce06a02-f4c7-461f-b032-170c13da2d45" />
