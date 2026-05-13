@@ -50,9 +50,14 @@ public abstract class BWInvoker<TMessage>
         this._Monitor = monitor;
         this._Identifier = new BWIdentifier("BWInvoker");
 
-        this.Middleware = (middlewareBuilder is { })
-            ? middlewareBuilder.Build(this, monitor)
-            : new BWMiddleware<TMessage>(this);
+        //this.Middleware = (middlewareBuilder is { })
+        //    ? middlewareBuilder.Build(this, monitor)
+        //    : new BWMiddleware<TMessage>(this);
+
+        this.Middleware = (
+                middlewareBuilder
+                ?? BWMiddlewareBuilder<TMessage>.CreateDefault(default)
+            ).Build(this, monitor);
     }
 
     public void SetCaller(IBWWorker caller, BWIdentifier identifier) {

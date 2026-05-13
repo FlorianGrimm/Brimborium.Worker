@@ -93,7 +93,9 @@ public struct BWMiddleware<TBWMessage> : IBWMiddleware<TBWMessage>
     }
 
     public void SetCaller(IBWWorker caller, BWIdentifier identifier) {
-        if (ReferenceEquals(caller, this.Middleware)) { return; }
+        if (ReferenceEquals(caller, this.Middleware)) { 
+            return; 
+        }
         if (this.Middleware is IBWInvoker invoker) { 
             invoker.SetCaller(caller, identifier);
         }

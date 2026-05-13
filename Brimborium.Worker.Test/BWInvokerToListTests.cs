@@ -2,7 +2,7 @@
 
 public class BWInvokerToListTests {
     [Test]
-    public async Task Test001() {
+    public async Task BWInvokerToListTest() {
         CancellationTokenSource cts = new CancellationTokenSource();
         IBWMonitor monitor = BWMonitorNull.Instance;
         BWInvokerToList<IBWMessageWithValue<int>> target = new(null, default, monitor);
