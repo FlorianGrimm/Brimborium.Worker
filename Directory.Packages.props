@@ -6,7 +6,25 @@
   <ItemGroup>
     <PackageVersion Include="Foundatio.Mediator" Version="1.2.1" />
     <PackageVersion Include="Injectio" Version="6.1.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Certificate" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
-    <PackageVersion Include="TUnit" Version="1.44.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Identity.Web" Version="4.9.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.DownstreamApi" Version="4.9.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.GraphServiceClientBeta" Version="4.9.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.MicrosoftGraphBeta" Version="4.9.0" />
+    <PackageVersion Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />
+    <PackageVersion Include="TUnit" Version="1.44.39" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageVersion Include="TypedSignalR.Client" Version="3.6.0" />
+    <PackageVersion Include="TypedSignalR.Client.Attributes" Version="1.1.0" />
+    <PackageVersion Include="TypedSignalR.Client.DevTools" Version="1.2.4" />
+    <PackageVersion Include="TypedSignalR.Client.DevTools.UI" Version="1.2.4" />
+    <PackageVersion Include="TypedSignalR.Client.TypeScript.Analyzer" Version="1.17.0" />
+    <PackageVersion Include="TypedSignalR.Client.TypeScript.Attributes" Version="1.17.0" />
   </ItemGroup>
 </Project>

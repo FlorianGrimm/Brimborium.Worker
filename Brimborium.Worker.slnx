@@ -7,7 +7,10 @@
     <File Path="LICENSE" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="Brimborium.Worker.Frontend/Brimborium.Worker.Frontend/Brimborium.Worker.Frontend.csproj" />
   <Project Path="Brimborium.Worker.Test/Brimborium.Worker.Test.csproj" />
+  <Project Path="Brimborium.Worker.Web/Brimborium.Worker.Web.csproj" Id="6e39a2da-8304-453e-b761-6506798c7783" />
+  <Project Path="Brimborium.Worker.WebApp/Brimborium.Worker.WebApp.csproj" Id="82000cfb-b450-49da-937c-0bc120f4e26a" />
   <Project Path="Brimborium.Worker/Brimborium.Worker.csproj" />
   <Project Path="Sample.Data.WebApp/Sample.Data.WebApp.csproj" Id="fce06a02-f4c7-461f-b032-170c13da2d45" />
 </Solution>

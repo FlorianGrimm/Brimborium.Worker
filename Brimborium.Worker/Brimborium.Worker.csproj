@@ -7,7 +7,6 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
 
-
     <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
         <PackageReference Include="Foundatio.Mediator" />
         <PackageReference Include="Injectio" />
@@ -16,6 +15,10 @@
     <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' != 'true'">
         <PackageReference Include="Foundatio.Mediator" Version="1.2.1" />
         <PackageReference Include="Injectio" Version="6.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
 </Project>

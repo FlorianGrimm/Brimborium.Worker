@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+/Brimborium.Worker.Frontend/Brimborium.Worker.Frontend/wwwroot/

@@ -1,0 +1,6 @@
+@Brimborium.Worker.WebApp_HostAddress = http://localhost:5230
+
+GET {{Brimborium.Worker.WebApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -68,7 +68,7 @@ public class BWWorkerWithQueue<TMessage>
             while (await this._Queue.WaitToReadAsync(cancellationToken)) {
                 while (this._Queue.TryRead(out var message)) {
                     if (message.TryGetBehaviour<BWBehaviourQueueScope>(0, out var queueScope)) {
-                        queueScope.Scope.Dispose();                        
+                        queueScope.Scope.Dispose();
                     }
                     await this._InvokerNext.ExecuteAsync(message, cancellationToken);
                     if (message.TryGetBehaviour<BWBehaviourCompletion>(0, out var completion)) {

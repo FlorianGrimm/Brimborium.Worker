@@ -21,6 +21,13 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": {
+              "base": "./Brimborium.Worker.Frontend",
+              "browser": "wwwroot",
+              "media": "wwwroot",
+              "server": "server"
+            },
+            "deleteOutputPath": false,
             "browser": "projects/frontend/src/main.ts",
             "tsConfig": "projects/frontend/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
