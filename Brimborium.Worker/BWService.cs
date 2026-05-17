@@ -18,7 +18,7 @@ public class BWService<TOptions>
         ILogger logger) {
         this.Logger = logger;
         this._OnChangeDisposable = optionsMonitor.OnChange(this.OptionsOnChange);
-        this.OptionsOnChange(optionsMonitor.CurrentValue, string.Empty)
+        this.OptionsOnChange(optionsMonitor.CurrentValue, string.Empty);
     }
 
     protected virtual void OptionsOnChange(TOptions options, string? name) {
